@@ -195,7 +195,9 @@ public class Player {
 
         RayResult rayResult = ray.cast(scene);
 
-        scene.addBlock(rayResult);
+        if (rayResult.getIsIntersect()) {
+            scene.addBlock(rayResult);
+        }
     }
 
     public void removeBlock(long window, Scene scene) {
@@ -220,7 +222,9 @@ public class Player {
 
         RayResult rayResult = ray.cast(scene);
 
-        scene.removeBlock(rayResult.getPosition());
+        if (rayResult.getIsIntersect()) {
+            scene.removeBlock(rayResult.getPosition());
+        }
     }
 
     public void updateAABBMin() {

@@ -75,13 +75,10 @@ public class Ray {
 
         float t = 0.0f;
 
-        boolean isIntersectionFound = false;
-
         while (t <= this.distance) {
             if (scene.isBlockActive(position)) {
+                rayResult.setIsIntersect(true);
                 rayResult.setPosition(position);
-
-                isIntersectionFound = true;
 
                 break;
             }
@@ -105,10 +102,6 @@ public class Ray {
                 axes.zero();
                 axes.z = -step.z;
             }
-        }
-
-        if (isIntersectionFound) {
-            rayResult.setPosition(position);
         }
 
         rayResult.setAxes(axes);

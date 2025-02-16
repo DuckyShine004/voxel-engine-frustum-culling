@@ -77,8 +77,6 @@ public class Chunk {
 
         block.setGlobalPosition(this.position.x + x, this.position.y + y, this.position.z + z);
 
-        Debug.debug(block.getGlobalPosition());
-
         this.blocks[x][y][z] = block;
     }
 

@@ -17,7 +17,7 @@ import com.duckyshine.app.asset.AssetPool;
 import com.duckyshine.app.camera.Camera;
 
 import com.duckyshine.app.math.Axis;
-
+import com.duckyshine.app.math.Vector3;
 import com.duckyshine.app.model.Mesh;
 import com.duckyshine.app.model.Block;
 import com.duckyshine.app.model.BlockType;
@@ -63,13 +63,11 @@ public class Scene {
     }
 
     public void generate() {
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
+        for (int x = 0; x < 1; x++) {
+            for (int z = 0; z < 1; z++) {
                 Chunk chunk = new Chunk(x * 16, 0, z * 16);
 
-                chunk.generate();
-
-                this.chunks.put(chunk.getPosition(), chunk);
+                this.chunkQueue.add(chunk);
             }
         }
     }
@@ -111,20 +109,20 @@ public class Scene {
             return null;
         }
 
-        int x = (int) Math.floor((float) position.x / this.CHUNK_WIDTH) * this.CHUNK_WIDTH;
-        int y = (int) Math.floor((float) position.y / this.CHUNK_HEIGHT) * this.CHUNK_HEIGHT;
-        int z = (int) Math.floor((float) position.z / this.CHUNK_DEPTH) * this.CHUNK_DEPTH;
+        int x = Math.floorDiv(position.x, this.CHUNK_WIDTH) * this.CHUNK_WIDTH;
+        int y = Math.floorDiv(position.y, this.CHUNK_HEIGHT) * this.CHUNK_HEIGHT;
+        int z = Math.floorDiv(position.z, this.CHUNK_DEPTH) * this.CHUNK_DEPTH;
 
         return new Vector3i(x, y, z);
     }
 
     // Expect world position
     public Vector3i getBlockPosition(Vector3f position) {
-        int x = (int) Math.floor(position.x);
-        int y = (int) Math.floor(position.y);
-        int z = (int) Math.floor(position.z);
+        int x = Math.floorMod((int) Math.floor(position.x), this.CHUNK_WIDTH);
+        int y = Math.floorMod((int) Math.floor(position.y), this.CHUNK_HEIGHT);
+        int z = Math.floorMod((int) Math.floor(position.z), this.CHUNK_DEPTH);
 
-        return new Vector3i(x % this.CHUNK_WIDTH, y % this.CHUNK_HEIGHT, z % this.CHUNK_DEPTH);
+        return new Vector3i(x, y, z);
     }
 
     public boolean isBlockActive(Vector3i position) {
@@ -150,13 +148,15 @@ public class Scene {
     public void removeBlock(Vector3i position) {
         Vector3i chunkPosition = this.getChunkPosition(position);
 
-        if (chunkPosition == null) {
+        if (!this.isChunkActive(chunkPosition)) {
             return;
         }
 
         Chunk chunk = this.chunks.get(chunkPosition);
 
-        chunk.removeBlock(position);
+        Vector3i blockPosition = this.getBlockPosition(new Vector3f(position));
+
+        chunk.removeBlock(blockPosition);
 
         this.chunkQueue.add(chunk);
     }
@@ -165,7 +165,9 @@ public class Scene {
         Vector3i axes = rayResult.getAxes();
         Vector3i position = rayResult.getPosition();
 
-        Vector3i chunkPosition = this.getChunkPosition(position);
+        Vector3i delta = position.add(axes, new Vector3i());
+
+        Vector3i chunkPosition = this.getChunkPosition(delta);
 
         if (!this.isChunkActive(chunkPosition)) {
             return;
@@ -173,7 +175,11 @@ public class Scene {
 
         Chunk chunk = this.chunks.get(chunkPosition);
 
-        chunk.addBlock(position.add(axes, new Vector3i()), BlockType.GRASS);
+        Vector3i localPosition = this.getBlockPosition(new Vector3f(delta));
+
+        Debug.debug(chunkPosition, localPosition, delta);
+
+        chunk.addBlock(localPosition, BlockType.GRASS);
 
         this.chunkQueue.add(chunk);
     }
@@ -251,12 +257,24 @@ public class Scene {
 
         this.player.update(window, this);
 
+        this.updateChunks();
+    }
+
+    private void updateChunks() {
         // This can be multithreaded with the addition of queuing- in another
         // optimisation
         while (!this.chunkQueue.isEmpty()) {
             Chunk chunk = this.chunkQueue.poll();
 
-            chunk.update();
+            Vector3i position = chunk.getPosition();
+
+            if (!this.isChunkActive(position)) {
+                chunk.generate();
+
+                this.chunks.put(position, chunk);
+            } else {
+                chunk.update();
+            }
         }
     }
 

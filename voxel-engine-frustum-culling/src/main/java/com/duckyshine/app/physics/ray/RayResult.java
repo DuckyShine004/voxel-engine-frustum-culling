@@ -3,6 +3,8 @@ package com.duckyshine.app.physics.ray;
 import org.joml.Vector3i;
 
 public class RayResult {
+    private boolean isIntersect;
+
     private Vector3i axes;
     private Vector3i position;
 
@@ -22,6 +24,14 @@ public class RayResult {
 
     public void setPosition(Vector3i position) {
         this.position = position;
+    }
+
+    public void setIsIntersect(boolean isIntersect) {
+        this.isIntersect = isIntersect;
+    }
+
+    public boolean getIsIntersect() {
+        return this.isIntersect;
     }
 
     public Vector3i getAxes() {
