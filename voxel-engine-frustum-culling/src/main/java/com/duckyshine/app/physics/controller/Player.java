@@ -12,6 +12,7 @@ import com.duckyshine.app.camera.Camera;
 import com.duckyshine.app.physics.AABB;
 import com.duckyshine.app.physics.ray.Ray;
 import com.duckyshine.app.physics.ray.RayResult;
+import com.duckyshine.app.scene.ChunkManager;
 import com.duckyshine.app.scene.Scene;
 import com.duckyshine.app.debug.Debug;
 
@@ -195,8 +196,10 @@ public class Player {
 
         RayResult rayResult = ray.cast(scene);
 
+        ChunkManager chunkManager = scene.getChunkManager();
+
         if (rayResult.getIsIntersect()) {
-            scene.addBlock(rayResult);
+            chunkManager.addBlock(rayResult);
         }
     }
 
@@ -222,8 +225,10 @@ public class Player {
 
         RayResult rayResult = ray.cast(scene);
 
+        ChunkManager chunkManager = scene.getChunkManager();
+
         if (rayResult.getIsIntersect()) {
-            scene.removeBlock(rayResult.getPosition());
+            chunkManager.removeBlock(rayResult.getPosition());
         }
     }
 

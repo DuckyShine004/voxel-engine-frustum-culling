@@ -1,11 +1,8 @@
 package com.duckyshine.app.model;
 
-import java.util.Vector;
-
 import org.joml.Vector3i;
 
-import com.duckyshine.app.math.Math;
-
+import com.duckyshine.app.math.Range;
 import com.duckyshine.app.debug.Debug;
 
 public class Chunk {
@@ -53,18 +50,18 @@ public class Chunk {
         return this.mesh;
     }
 
+    public boolean isBlockActive(Vector3i position) {
+        return this.isBlockActive(position.x, position.y, position.z);
+    }
+
     public boolean isBlockActive(int x, int y, int z) {
         Vector3i position = new Vector3i(x, y, z);
 
-        if (!Math.isInRange3D(position, this.WIDTH, this.HEIGHT, this.DEPTH)) {
+        if (!Range.isInRange3D(position, this.WIDTH, this.HEIGHT, this.DEPTH)) {
             return false;
         }
 
         return this.blocks[x][y][z] != null;
-    }
-
-    public boolean isBlockActive(Vector3i position) {
-        return this.isBlockActive(position.x, position.y, position.z);
     }
 
     // Assumes args are valid

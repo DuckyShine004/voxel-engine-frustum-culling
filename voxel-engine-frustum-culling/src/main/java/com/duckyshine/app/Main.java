@@ -106,7 +106,7 @@ public class Main {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        this.scene.generate();
+        this.scene.initialise();
     }
 
     private void run() {

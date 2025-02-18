@@ -18,6 +18,7 @@ import com.duckyshine.app.camera.Camera;
 
 import com.duckyshine.app.math.Axis;
 import com.duckyshine.app.math.Vector3;
+import com.duckyshine.app.math.Voxel;
 import com.duckyshine.app.model.Mesh;
 import com.duckyshine.app.model.Block;
 import com.duckyshine.app.model.BlockType;
@@ -30,172 +31,30 @@ import com.duckyshine.app.debug.Debug;
 
 // Only two places where I need to change the constants, here and Chunk
 public class Scene {
-    private final int CHUNK_WIDTH = 16;
-    private final int CHUNK_DEPTH = 16;
-    private final int CHUNK_HEIGHT = 16;
-
     private Shader shader;
 
     private Player player;
 
-    private Map<Vector3i, Chunk> chunks;
-
-    private Deque<Chunk> chunkQueue;
+    private ChunkManager chunkManager;
 
     public Scene() {
-        this.chunks = new HashMap<>();
-
         this.player = new Player(0.0f, 20.0f, 0.0f);
 
         this.shader = AssetPool.getShader(ShaderType.WORLD.getName());
 
-        this.chunkQueue = new ArrayDeque<>();
+        this.chunkManager = new ChunkManager();
     }
 
     public Scene(Shader shader) {
-        this.chunks = new HashMap<>();
-
         this.player = new Player();
 
         this.shader = shader;
 
-        this.chunkQueue = new ArrayDeque<>();
+        this.chunkManager = new ChunkManager();
     }
 
-    public void generate() {
-        for (int x = 0; x < 1; x++) {
-            for (int z = 0; z < 1; z++) {
-                Chunk chunk = new Chunk(x * 16, 0, z * 16);
-
-                this.chunkQueue.add(chunk);
-            }
-        }
-    }
-
-    public boolean isChunkActive(Vector3i position) {
-        return this.chunks.containsKey(position);
-    }
-
-    public boolean isChunkActive(int x, int y, int z) {
-        Vector3i position = new Vector3i(x, y, z);
-
-        return this.isChunkActive(position);
-    }
-
-    public Chunk getChunk(int x, int y, int z) {
-        Vector3i position = new Vector3i(x, y, z);
-
-        return this.getChunk(position);
-    }
-
-    public Chunk getChunk(Vector3i position) {
-        return this.chunks.get(position);
-    }
-
-    public Block getBlock(int x, int y, int z) {
-        Vector3i position = new Vector3i(x, y, z);
-
-        return this.getBlock(position);
-    }
-
-    public Vector3i getChunkPosition(int x, int y, int z) {
-        Vector3i position = new Vector3i(x, y, z);
-
-        return this.getChunkPosition(position);
-    }
-
-    public Vector3i getChunkPosition(Vector3i position) {
-        if (position == null) {
-            return null;
-        }
-
-        int x = Math.floorDiv(position.x, this.CHUNK_WIDTH) * this.CHUNK_WIDTH;
-        int y = Math.floorDiv(position.y, this.CHUNK_HEIGHT) * this.CHUNK_HEIGHT;
-        int z = Math.floorDiv(position.z, this.CHUNK_DEPTH) * this.CHUNK_DEPTH;
-
-        return new Vector3i(x, y, z);
-    }
-
-    // Expect world position
-    public Vector3i getBlockPosition(Vector3f position) {
-        int x = Math.floorMod((int) Math.floor(position.x), this.CHUNK_WIDTH);
-        int y = Math.floorMod((int) Math.floor(position.y), this.CHUNK_HEIGHT);
-        int z = Math.floorMod((int) Math.floor(position.z), this.CHUNK_DEPTH);
-
-        return new Vector3i(x, y, z);
-    }
-
-    public boolean isBlockActive(Vector3i position) {
-        Vector3i chunkPosition = this.getChunkPosition(position);
-
-        if (!this.isChunkActive(chunkPosition)) {
-            return false;
-        }
-
-        Vector3i blockPosition = this.getBlockPosition(new Vector3f(position));
-
-        Chunk chunk = this.getChunk(chunkPosition);
-
-        return chunk.isBlockActive(blockPosition);
-    }
-
-    public boolean isBlockActive(int x, int y, int z) {
-        Vector3i position = new Vector3i(x, y, z);
-
-        return this.isBlockActive(position);
-    }
-
-    public void removeBlock(Vector3i position) {
-        Vector3i chunkPosition = this.getChunkPosition(position);
-
-        if (!this.isChunkActive(chunkPosition)) {
-            return;
-        }
-
-        Chunk chunk = this.chunks.get(chunkPosition);
-
-        Vector3i blockPosition = this.getBlockPosition(new Vector3f(position));
-
-        chunk.removeBlock(blockPosition);
-
-        this.chunkQueue.add(chunk);
-    }
-
-    public void addBlock(RayResult rayResult) {
-        Vector3i axes = rayResult.getAxes();
-        Vector3i position = rayResult.getPosition();
-
-        Vector3i delta = position.add(axes, new Vector3i());
-
-        Vector3i chunkPosition = this.getChunkPosition(delta);
-
-        if (!this.isChunkActive(chunkPosition)) {
-            return;
-        }
-
-        Chunk chunk = this.chunks.get(chunkPosition);
-
-        Vector3i localPosition = this.getBlockPosition(new Vector3f(delta));
-
-        Debug.debug(chunkPosition, localPosition, delta);
-
-        chunk.addBlock(localPosition, BlockType.GRASS);
-
-        this.chunkQueue.add(chunk);
-    }
-
-    public Block getBlock(Vector3i position) {
-        Vector3i chunkPosition = this.getChunkPosition(position);
-
-        if (!this.isChunkActive(chunkPosition)) {
-            return null;
-        }
-
-        Chunk chunk = this.getChunk(chunkPosition);
-
-        Vector3i blockPosition = this.getBlockPosition(new Vector3f(position));
-
-        return chunk.getBlock(blockPosition);
+    public void initialise() {
+        this.chunkManager.initialise();
     }
 
     public boolean isColliding(AABB aabb) {
@@ -213,7 +72,9 @@ public class Scene {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    if (this.isBlockActive(x, y, z)) {
+                    Vector3f position = new Vector3f(x, y, z);
+
+                    if (this.chunkManager.isBlockActiveAtGlobalPosition(position)) {
                         return true;
                     }
                 }
@@ -257,25 +118,7 @@ public class Scene {
 
         this.player.update(window, this);
 
-        this.updateChunks();
-    }
-
-    private void updateChunks() {
-        // This can be multithreaded with the addition of queuing- in another
-        // optimisation
-        while (!this.chunkQueue.isEmpty()) {
-            Chunk chunk = this.chunkQueue.poll();
-
-            Vector3i position = chunk.getPosition();
-
-            if (!this.isChunkActive(position)) {
-                chunk.generate();
-
-                this.chunks.put(position, chunk);
-            } else {
-                chunk.update();
-            }
-        }
+        this.chunkManager.update();
     }
 
     public void setShader(ShaderType shaderType) {
@@ -291,11 +134,7 @@ public class Scene {
     public void render() {
         this.setShader(ShaderType.WORLD);
 
-        for (Chunk chunk : chunks.values()) {
-            Mesh mesh = chunk.getMesh();
-
-            mesh.render();
-        }
+        this.chunkManager.render();
 
         AABB aabb = this.player.getAABB();
 
@@ -305,14 +144,14 @@ public class Scene {
     }
 
     public void cleanup() {
-        for (Chunk chunk : chunks.values()) {
-            Mesh mesh = chunk.getMesh();
-
-            mesh.cleanup();
-        }
+        this.chunkManager.cleanup();
     }
 
     public Camera getCamera() {
         return this.player.getCamera();
+    }
+
+    public ChunkManager getChunkManager() {
+        return this.chunkManager;
     }
 }
