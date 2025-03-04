@@ -84,8 +84,12 @@ public class Player {
         this.isGrounded = isGrounded;
 
         if (isGrounded) {
-            this.velocity.y = 0.0f;
+            this.resetVerticalVelocity();
         }
+    }
+
+    public void resetVerticalVelocity() {
+        this.velocity.y = 0.0f;
     }
 
     public boolean getIsGrounded() {
@@ -133,6 +137,8 @@ public class Player {
         if (velocity.length() != 0.0f) {
             velocity.normalize().mul(this.SPEED);
         }
+
+        // Debug.debug(this.velocity.y);
 
         this.velocity.x = velocity.x;
         this.velocity.z = velocity.z;
@@ -258,6 +264,10 @@ public class Player {
 
     public Vector3f getPosition() {
         return this.position;
+    }
+
+    public float getHeight() {
+        return this.HEIGHT;
     }
 
     public Vector3f getVelocity() {

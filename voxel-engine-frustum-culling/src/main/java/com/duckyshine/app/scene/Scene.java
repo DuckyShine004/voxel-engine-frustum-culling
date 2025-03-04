@@ -97,6 +97,11 @@ public class Scene {
         this.player.setPosition(target);
     }
 
+    // Refactor to controller for other dynamic entities
+    private void setControllerGravity(Player player, Axis axis, float position, float target, boolean isColliding) {
+
+    }
+
     public float getAxisCollision(float position, float target, Axis axis) {
         AABB aabb = this.player.getAABB();
 
@@ -104,10 +109,16 @@ public class Scene {
 
         boolean isColliding = this.isColliding(offsetAABB);
 
-        if (axis == Axis.Y && isColliding && target <= position) {
-            this.player.setIsGrounded(true);
-        } else if (axis == Axis.Y) {
-            this.player.setIsGrounded(false);
+        if (axis == Axis.Y) {
+            if (isColliding) {
+                if (target <= position) {
+                    this.player.setIsGrounded(true);
+                } else {
+                    this.player.resetVerticalVelocity();
+                }
+            } else {
+                this.player.setIsGrounded(false);
+            }
         }
 
         return isColliding ? position : target;
