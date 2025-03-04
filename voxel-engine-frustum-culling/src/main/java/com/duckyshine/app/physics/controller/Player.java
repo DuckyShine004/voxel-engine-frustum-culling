@@ -20,6 +20,8 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Player {
     private final float SPEED = 10.0f;
+    private final float VERTICAL_SPEED = 5.0f; // I think 5 works fine, that should be ~ vertical speed as og mc
+
     private final float GRAVITY = 9.81f;
 
     private final float WIDTH = 0.8f;
@@ -146,7 +148,7 @@ public class Player {
 
     public void updateVerticalVelocity(long window, float deltaTime) {
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && this.isGrounded) {
-            this.velocity.y = 8.0f;
+            this.velocity.y = this.VERTICAL_SPEED;
         }
 
         this.velocity.y -= GRAVITY * deltaTime;

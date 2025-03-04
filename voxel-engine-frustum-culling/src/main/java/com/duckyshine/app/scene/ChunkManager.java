@@ -1,6 +1,7 @@
 package com.duckyshine.app.scene;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.ArrayDeque;
@@ -25,6 +26,8 @@ public class ChunkManager {
     public static final int CHUNK_HEIGHT = 16;
 
     private Map<Vector3i, Chunk> chunks;
+
+    private Set<Vector3i> loadedHeightMaps;
 
     private Deque<Chunk> chunkQueue;
 

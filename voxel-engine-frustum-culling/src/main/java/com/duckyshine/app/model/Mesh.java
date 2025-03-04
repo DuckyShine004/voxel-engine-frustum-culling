@@ -44,40 +44,6 @@ public class Mesh {
         this.textures = new ArrayList<>();
     }
 
-    public void generateHeightMap(Chunk chunk) {
-        int width = chunk.getWidth();
-        int depth = chunk.getDepth();
-
-        Vector3i position = chunk.getPosition();
-
-        this.heightMap = new int[width][depth];
-
-        for (int dx = 0; dx < width; dx++) {
-            for (int dz = 0; dz < depth; dz++) {
-                double offsetX = (double) (position.x + dx) / width - 0.5d;
-                double offsetZ = (double) (position.z + dz) / depth - 0.5d;
-
-                this.heightMap[dx][dz] = Noise.getNoise2d(offsetX, offsetZ);
-            }
-        }
-    }
-
-    public void generate(Chunk chunk) {
-        if (this.heightMap == null) {
-            this.generateHeightMap(chunk);
-        }
-
-        for (int x = 0; x < chunk.getWidth(); x++) {
-            for (int z = 0; z < chunk.getDepth(); z++) {
-                int y = this.heightMap[x][z];
-
-                chunk.addBlock(x, y, z, BlockType.GRASS);
-            }
-        }
-
-        this.update(chunk);
-    }
-
     public void update(Chunk chunk) {
         this.cull(chunk);
 
