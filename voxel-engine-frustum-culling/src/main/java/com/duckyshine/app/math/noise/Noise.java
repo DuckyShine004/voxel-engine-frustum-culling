@@ -12,7 +12,12 @@ public class Noise {
 
     private static final double LACUNARITY = 2.0f;
 
-    private static final double FREQUENCY = 1.0f;
+    // Default: 1,10
+    //
+    // Use lower freq with higher scale:
+    // Best settings:
+    // 0.5,20
+    private static final double FREQUENCY = 0.5f;
 
     private static final double SCALE = 20.0f;
 

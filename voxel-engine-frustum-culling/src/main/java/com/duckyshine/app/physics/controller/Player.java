@@ -143,8 +143,6 @@ public class Player {
             velocity.normalize().mul(this.SPEED);
         }
 
-        // Debug.debug(this.velocity.y);
-
         this.velocity.x = velocity.x;
         this.velocity.z = velocity.z;
     }
@@ -152,7 +150,6 @@ public class Player {
     public void updateVerticalVelocity(long window, float deltaTime) {
         if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
             this.isGravityOn ^= true;
-            Debug.debug(this.isGravityOn);
         }
 
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && (this.isGrounded || !this.isGravityOn)) {

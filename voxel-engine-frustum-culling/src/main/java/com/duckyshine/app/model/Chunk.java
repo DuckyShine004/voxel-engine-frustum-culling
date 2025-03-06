@@ -60,10 +60,10 @@ public class Chunk {
             for (int x = 0; x < this.WIDTH; x++) {
                 int y = heights[z][x];
 
-                Debug.debug(y, this.position.y, this.position.y + this.HEIGHT);
-
+                // Don't need this since, chunks are added based on player's position
                 if (!isValidHeight(y)) {
-                    Vector3i chunkPosition = Voxel.getChunkPositionFromGlobalPosition(x, y, z);
+                    Vector3i chunkPosition = Voxel.getChunkPositionFromGlobalPosition(this.position.x + x, y,
+                            this.position.z + z);
                     chunkQueue.add(chunkPosition);
 
                     continue;
