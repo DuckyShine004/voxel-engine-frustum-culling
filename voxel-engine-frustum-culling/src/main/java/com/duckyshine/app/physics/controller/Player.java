@@ -35,6 +35,7 @@ public class Player {
     private final float CAMERA_OFFSET_Z = -2.0f;
 
     private boolean isGrounded;
+    private boolean isGravityOn;
 
     private boolean isLeftMouseButtonClicked;
     private boolean isRightMouseButtonClicked;
@@ -67,6 +68,8 @@ public class Player {
     }
 
     private void initialise() {
+        this.isGravityOn = true;
+
         this.camera = new Camera(this.getCameraPosition());
 
         this.dimension = new Vector3f(this.WIDTH, this.HEIGHT, this.DEPTH);
@@ -147,11 +150,22 @@ public class Player {
     }
 
     public void updateVerticalVelocity(long window, float deltaTime) {
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && this.isGrounded) {
+        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+            this.isGravityOn ^= true;
+            Debug.debug(this.isGravityOn);
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && (this.isGrounded || !this.isGravityOn)) {
             this.velocity.y = this.VERTICAL_SPEED;
         }
 
-        this.velocity.y -= GRAVITY * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && !this.isGravityOn) {
+            this.velocity.y = -this.VERTICAL_SPEED;
+        }
+
+        if (this.isGravityOn) {
+            this.velocity.y -= GRAVITY * deltaTime;
+        }
     }
 
     public void updateVelocity(long window, float deltaTime) {
@@ -163,6 +177,10 @@ public class Player {
         Vector3f position = new Vector3f(this.position);
 
         position.add(Vector3.mul(deltaTime, this.velocity));
+
+        if (!this.isGravityOn) {
+            this.resetVerticalVelocity();
+        }
 
         return position;
     }
@@ -270,6 +288,10 @@ public class Player {
 
     public float getHeight() {
         return this.HEIGHT;
+    }
+
+    public boolean isGravityOn() {
+        return this.isGravityOn;
     }
 
     public Vector3f getVelocity() {

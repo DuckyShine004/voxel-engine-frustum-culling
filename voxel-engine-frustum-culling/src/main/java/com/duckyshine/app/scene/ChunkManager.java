@@ -41,9 +41,10 @@ public class ChunkManager {
         this.chunkQueue = new ArrayDeque<>();
     }
 
+    // Dynamically generate based on player's position
     public void initialise() {
-        for (int x = 0; x < 1; x++) {
-            for (int z = 0; z < 1; z++) {
+        for (int x = 0; x < 3; x++) {
+            for (int z = 0; z < 3; z++) {
                 Vector3i chunkPosition = new Vector3i(x * 16, 0, z * 16);
 
                 this.chunkQueue.add(chunkPosition);
