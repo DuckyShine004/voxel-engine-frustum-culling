@@ -1,9 +1,13 @@
 package com.duckyshine.app.model;
 
+import java.util.Deque;
+
 import org.joml.Vector3i;
 
 import com.duckyshine.app.math.Range;
+import com.duckyshine.app.math.Voxel;
 import com.duckyshine.app.math.noise.Noise;
+import com.duckyshine.app.scene.HeightMap;
 import com.duckyshine.app.debug.Debug;
 
 public class Chunk {
@@ -13,9 +17,9 @@ public class Chunk {
 
     private final Vector3i position;
 
-    private Block[][][] blocks;
+    private boolean isHidden;
 
-    private int[][] heightMap;
+    private Block[][][] blocks;
 
     private Mesh mesh;
 
@@ -32,58 +36,47 @@ public class Chunk {
     }
 
     public void initialise() {
+        this.isHidden = false;
+
         this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
 
         this.mesh = new Mesh();
     }
 
-    public void generateHeightMap() {
-        Vector3i position = this.getPosition();
-
-        this.heightMap = new int[this.DEPTH][this.WIDTH];
-
-        for (int dz = 0; dz < this.DEPTH; dz++) {
-            for (int dx = 0; dx < this.WIDTH; dx++) {
-                double offsetX = (double) (position.x + dx) / this.WIDTH - 0.5d;
-                double offsetZ = (double) (position.z + dz) / this.DEPTH - 0.5d;
-
-                this.heightMap[dz][dx] = Noise.getNoise2d(offsetX, offsetZ);
-            }
-        }
-
-        // Check if the heightmap values are valid or not and update
-        this.validateHeightMap();
+    public boolean isValidHeight(int height) {
+        return Range.isInRange1D(height, this.position.y, this.position.y + this.HEIGHT);
     }
 
-    public void validateHeightMap() {
-        for (int z = 0; z < this.DEPTH; z++) {
-            for (int x = 0; x < this.WIDTH; x++) {
-                int height = heightMap[z][x];
-                if (!Range.isInRange1D(height, this.position.y, this.position.y + height)) {
-                    this.heightMap[z][x] = -1;
-                }
-            }
-        }
+    public void generate(Deque<Vector3i> chunkQueue, HeightMap heightMap) {
+        int[][] heights = heightMap.getHeights();
+
+        this.generateSurface(chunkQueue, heights);
+
+        this.update();
     }
 
-    public void generate() {
-        if (this.heightMap == null) {
-            this.generateHeightMap();
-        }
-
+    public void generateSurface(Deque<Vector3i> chunkQueue, int[][] heights) {
         for (int z = 0; z < this.DEPTH; z++) {
             for (int x = 0; x < this.WIDTH; x++) {
-                int y = this.heightMap[z][x];
+                int y = heights[z][x];
 
-                if (y == -1) {
+                Debug.debug(y, this.position.y, this.position.y + this.HEIGHT);
+
+                if (!isValidHeight(y)) {
+                    Vector3i chunkPosition = Voxel.getChunkPositionFromGlobalPosition(x, y, z);
+                    chunkQueue.add(chunkPosition);
+
                     continue;
                 }
 
-                this.addBlock(x, y, z, BlockType.GRASS);
+                this.addBlock(x, Math.floorMod(y, this.HEIGHT), z, BlockType.GRASS);
             }
         }
+    }
 
-        this.update();
+    // Use 3d noise
+    public void generateCaves() {
+
     }
 
     public void update() {
@@ -143,6 +136,10 @@ public class Chunk {
 
     public Vector3i getPosition() {
         return this.position;
+    }
+
+    public boolean isHidden() {
+        return this.isHidden;
     }
 
     public int getWidth() {

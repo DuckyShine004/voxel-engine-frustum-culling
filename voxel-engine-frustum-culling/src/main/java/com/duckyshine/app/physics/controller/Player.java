@@ -22,7 +22,7 @@ public class Player {
     private final float SPEED = 10.0f;
     private final float VERTICAL_SPEED = 5.0f; // I think 5 works fine, that should be ~ vertical speed as og mc
 
-    private final float GRAVITY = 9.81f;
+    private final float GRAVITY = 9.81f; // True: 31.36
 
     private final float WIDTH = 0.8f;
     private final float DEPTH = 0.8f;

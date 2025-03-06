@@ -6,9 +6,11 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.ArrayDeque;
 
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 
+import com.duckyshine.app.math.Vector2;
 import com.duckyshine.app.math.Voxel;
 
 import com.duckyshine.app.model.Mesh;
@@ -21,18 +23,20 @@ import com.duckyshine.app.physics.ray.RayResult;
 import com.duckyshine.app.debug.Debug;
 
 public class ChunkManager {
-    public static final int CHUNK_WIDTH = 16;
-    public static final int CHUNK_DEPTH = 16;
-    public static final int CHUNK_HEIGHT = 16;
+    public final int CHUNK_WIDTH = 16;
+    public final int CHUNK_DEPTH = 16;
+    public final int CHUNK_HEIGHT = 16;
 
     private Map<Vector3i, Chunk> chunks;
 
-    private Set<Vector3i> loadedHeightMaps;
+    private Map<Vector2i, HeightMap> heightMaps;
 
-    private Deque<Chunk> chunkQueue;
+    private Deque<Vector3i> chunkQueue;
 
     public ChunkManager() {
         this.chunks = new HashMap<>();
+
+        this.heightMaps = new HashMap<>();
 
         this.chunkQueue = new ArrayDeque<>();
     }
@@ -40,11 +44,17 @@ public class ChunkManager {
     public void initialise() {
         for (int x = 0; x < 1; x++) {
             for (int z = 0; z < 1; z++) {
-                Chunk chunk = new Chunk(x * 16, 0, z * 16);
+                Vector3i chunkPosition = new Vector3i(x * 16, 0, z * 16);
 
-                this.chunkQueue.add(chunk);
+                this.chunkQueue.add(chunkPosition);
             }
         }
+    }
+
+    public boolean isHeightMapGenerated(Vector3i position) {
+        Vector2i heightMapPosition = Vector2.getXZInteger(position);
+
+        return this.heightMaps.containsKey(heightMapPosition);
     }
 
     public boolean isChunkActive(int x, int y, int z) {
@@ -138,7 +148,19 @@ public class ChunkManager {
 
         chunk.addBlock(blockPosition, BlockType.GRASS);
 
-        this.chunkQueue.add(chunk);
+        this.chunkQueue.add(chunk.getPosition());
+    }
+
+    public void addHeightMap(Vector3i position) {
+        HeightMap heightMap = new HeightMap(this.CHUNK_WIDTH, this.CHUNK_HEIGHT);
+
+        heightMap.generate(position);
+
+        this.heightMaps.put(Vector2.getXZInteger(position), heightMap);
+    }
+
+    public HeightMap getHeightMap(Vector3i position) {
+        return this.heightMaps.get(Vector2.getXZInteger(position));
     }
 
     public void removeBlock(Vector3f position) {
@@ -152,21 +174,37 @@ public class ChunkManager {
 
         chunk.removeBlock(blockPosition);
 
-        this.chunkQueue.add(chunk);
+        this.chunkQueue.add(chunk.getPosition());
+    }
+
+    public void addChunk(Vector3i position) {
+        Chunk chunk = new Chunk(position);
+
+        HeightMap heightMap = this.getHeightMap(position);
+
+        chunk.generate(this.chunkQueue, heightMap);
+
+        this.chunks.put(position, chunk);
+    }
+
+    public void updateChunk(Vector3i position) {
+        Chunk chunk = this.chunks.get(position);
+
+        chunk.update();
     }
 
     public void update() {
         while (!this.chunkQueue.isEmpty()) {
-            Chunk chunk = this.chunkQueue.poll();
+            Vector3i chunkPosition = this.chunkQueue.poll();
 
-            Vector3i chunkPosition = chunk.getPosition();
+            if (!this.isHeightMapGenerated(chunkPosition)) {
+                this.addHeightMap(chunkPosition);
+            }
 
             if (!this.isChunkActive(chunkPosition)) {
-                chunk.generate();
-
-                this.chunks.put(chunkPosition, chunk);
+                this.addChunk(chunkPosition);
             } else {
-                chunk.update();
+                this.updateChunk(chunkPosition);
             }
         }
     }

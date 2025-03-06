@@ -14,7 +14,7 @@ public class Noise {
 
     private static final double FREQUENCY = 1.0f;
 
-    private static final double SCALE = 10.0f;
+    private static final double SCALE = 20.0f;
 
     public static int getNoise2d(int x, int z) {
         return Noise.getNoise2d((double) x, (double) z);

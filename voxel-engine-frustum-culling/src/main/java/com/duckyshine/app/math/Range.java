@@ -3,6 +3,7 @@ package com.duckyshine.app.math;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 
+// Exclusive Range IMPORTANT, i.e., [a,b)
 public class Range {
     public static boolean isInRange1D(int value, int lower, int upper) {
         return value >= lower && value < upper;
