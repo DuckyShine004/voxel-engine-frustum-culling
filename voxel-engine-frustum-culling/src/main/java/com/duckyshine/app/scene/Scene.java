@@ -129,7 +129,7 @@ public class Scene {
 
         this.player.update(window, this);
 
-        this.chunkManager.update();
+        this.chunkManager.update(this.player);
     }
 
     public void setShader(ShaderType shaderType) {

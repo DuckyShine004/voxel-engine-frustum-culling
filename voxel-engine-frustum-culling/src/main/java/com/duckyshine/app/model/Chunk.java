@@ -7,6 +7,7 @@ import org.joml.Vector3i;
 import com.duckyshine.app.math.Range;
 import com.duckyshine.app.math.Voxel;
 import com.duckyshine.app.math.noise.Noise;
+import com.duckyshine.app.scene.ChunkManager;
 import com.duckyshine.app.scene.HeightMap;
 import com.duckyshine.app.debug.Debug;
 
@@ -18,6 +19,7 @@ public class Chunk {
     private final Vector3i position;
 
     private boolean isHidden;
+    private boolean isUpdate;
 
     private Block[][][] blocks;
 
@@ -37,6 +39,7 @@ public class Chunk {
 
     public void initialise() {
         this.isHidden = false;
+        this.isUpdate = false;
 
         this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
 
@@ -47,15 +50,15 @@ public class Chunk {
         return Range.isInRange1D(height, this.position.y, this.position.y + this.HEIGHT);
     }
 
-    public void generate(Deque<Vector3i> chunkQueue, HeightMap heightMap) {
+    public void generate(ChunkManager chunkManager, HeightMap heightMap) {
         int[][] heights = heightMap.getHeights();
 
-        this.generateSurface(chunkQueue, heights);
+        this.generateSurface(chunkManager, heights);
 
         this.update();
     }
 
-    public void generateSurface(Deque<Vector3i> chunkQueue, int[][] heights) {
+    public void generateSurface(ChunkManager chunkManager, int[][] heights) {
         for (int z = 0; z < this.DEPTH; z++) {
             for (int x = 0; x < this.WIDTH; x++) {
                 int y = heights[z][x];
@@ -64,7 +67,7 @@ public class Chunk {
                 if (!isValidHeight(y)) {
                     Vector3i chunkPosition = Voxel.getChunkPositionFromGlobalPosition(this.position.x + x, y,
                             this.position.z + z);
-                    chunkQueue.add(chunkPosition);
+                    chunkManager.queueChunk(chunkPosition);
 
                     continue;
                 }
@@ -140,6 +143,14 @@ public class Chunk {
 
     public boolean isHidden() {
         return this.isHidden;
+    }
+
+    public void setIsUpdate(boolean isUpdate) {
+        this.isUpdate = isUpdate;
+    }
+
+    public boolean getIsUpdate() {
+        return this.isUpdate;
     }
 
     public int getWidth() {

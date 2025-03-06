@@ -19,6 +19,8 @@ import com.duckyshine.app.debug.Debug;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Player {
+    private final int RENDER_DISTANCE = 2;
+
     private final float SPEED = 10.0f;
     private final float VERTICAL_SPEED = 5.0f; // I think 5 works fine, that should be ~ vertical speed as og mc
 
@@ -293,5 +295,9 @@ public class Player {
 
     public Vector3f getVelocity() {
         return this.velocity;
+    }
+
+    public int getRenderDistance() {
+        return this.RENDER_DISTANCE;
     }
 }

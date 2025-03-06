@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.ArrayDeque;
 
 import org.joml.Vector2i;
@@ -17,11 +18,12 @@ import com.duckyshine.app.model.Mesh;
 import com.duckyshine.app.model.Block;
 import com.duckyshine.app.model.Chunk;
 import com.duckyshine.app.model.BlockType;
-
+import com.duckyshine.app.physics.controller.Player;
 import com.duckyshine.app.physics.ray.RayResult;
 
 import com.duckyshine.app.debug.Debug;
 
+// MUST MULTITHREAD, MESH GENERATION AND NOISE IS SUPER SLOW
 public class ChunkManager {
     public final int CHUNK_WIDTH = 16;
     public final int CHUNK_DEPTH = 16;
@@ -31,6 +33,8 @@ public class ChunkManager {
 
     private Map<Vector2i, HeightMap> heightMaps;
 
+    private Set<Vector3i> queuedChunks;
+
     private Deque<Vector3i> chunkQueue;
 
     public ChunkManager() {
@@ -38,16 +42,18 @@ public class ChunkManager {
 
         this.heightMaps = new HashMap<>();
 
+        this.queuedChunks = new HashSet<>();
+
         this.chunkQueue = new ArrayDeque<>();
     }
 
     // Dynamically generate based on player's position
     public void initialise() {
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
+        for (int x = 0; x < 1; x++) {
+            for (int z = 0; z < 1; z++) {
                 Vector3i chunkPosition = new Vector3i(x * 16, 0, z * 16);
 
-                this.chunkQueue.add(chunkPosition);
+                this.queueChunk(chunkPosition);
             }
         }
     }
@@ -149,7 +155,9 @@ public class ChunkManager {
 
         chunk.addBlock(blockPosition, BlockType.GRASS);
 
-        this.chunkQueue.add(chunk.getPosition());
+        chunk.setIsUpdate(true);
+
+        this.queueChunk(chunk.getPosition());
     }
 
     public void addHeightMap(Vector3i position) {
@@ -175,7 +183,17 @@ public class ChunkManager {
 
         chunk.removeBlock(blockPosition);
 
-        this.chunkQueue.add(chunk.getPosition());
+        chunk.setIsUpdate(true);
+
+        this.queueChunk(chunk.getPosition());
+    }
+
+    public void queueChunk(Vector3i position) {
+        Debug.debug(position);
+        if (!this.queuedChunks.contains(position)) {
+            this.chunkQueue.add(position);
+            this.queuedChunks.add(position);
+        }
     }
 
     public void addChunk(Vector3i position) {
@@ -183,7 +201,7 @@ public class ChunkManager {
 
         HeightMap heightMap = this.getHeightMap(position);
 
-        chunk.generate(this.chunkQueue, heightMap);
+        chunk.generate(this, heightMap);
 
         this.chunks.put(position, chunk);
     }
@@ -191,22 +209,57 @@ public class ChunkManager {
     public void updateChunk(Vector3i position) {
         Chunk chunk = this.chunks.get(position);
 
-        chunk.update();
+        // are we actually updating the chunk
+        if (chunk.getIsUpdate()) {
+            chunk.update();
+
+            chunk.setIsUpdate(false);
+        }
     }
 
-    public void update() {
+    public void addSurroundingChunks(Player player) {
+        int renderDistance = player.getRenderDistance();
+
+        Vector3i chunkPosition = Voxel.getChunkPositionFromGlobalPosition(player.getPosition());
+
+        int startX = chunkPosition.x - (this.CHUNK_WIDTH * renderDistance);
+        int startY = chunkPosition.y - (this.CHUNK_HEIGHT * renderDistance);
+        int startZ = chunkPosition.z - (this.CHUNK_DEPTH * renderDistance);
+
+        int endX = chunkPosition.x + (this.CHUNK_WIDTH * renderDistance);
+        int endY = chunkPosition.y + (this.CHUNK_HEIGHT * renderDistance);
+        int endZ = chunkPosition.z + (this.CHUNK_DEPTH * renderDistance);
+
+        for (int x = startX; x <= endX; x += this.CHUNK_WIDTH) {
+            for (int y = startY; y <= endY; y += this.CHUNK_HEIGHT) {
+                for (int z = startZ; z <= endZ; z += this.CHUNK_DEPTH) {
+                    Vector3i position = new Vector3i(x, y, z);
+
+                    this.queueChunk(position);
+                }
+            }
+        }
+    }
+
+    public void update(Player player) {
+        this.addSurroundingChunks(player);
+
         while (!this.chunkQueue.isEmpty()) {
+            Debug.debug(this.chunkQueue.size());
             Vector3i chunkPosition = this.chunkQueue.poll();
 
             if (!this.isHeightMapGenerated(chunkPosition)) {
                 this.addHeightMap(chunkPosition);
             }
 
+            // Current issue is that chunks are being updated not on purpose
             if (!this.isChunkActive(chunkPosition)) {
                 this.addChunk(chunkPosition);
             } else {
                 this.updateChunk(chunkPosition);
             }
+
+            this.queuedChunks.remove(chunkPosition);
         }
     }
 

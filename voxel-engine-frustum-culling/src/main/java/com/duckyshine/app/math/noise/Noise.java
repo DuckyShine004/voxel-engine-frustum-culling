@@ -54,4 +54,9 @@ public class Noise {
     private static double getSimplexNoise2d(double x, double z) {
         return SimplexNoise.noise2(Noise.SEED, x, z);
     }
+
+    // Performance improves slightly, at the cost of worse terrain generation
+    private static double getFastSimplexNoise2d(double x, double z) {
+        return FastSimplexNoise.noise2(Noise.SEED, x, z);
+    }
 }
